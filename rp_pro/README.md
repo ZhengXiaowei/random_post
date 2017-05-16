@@ -1,4 +1,4 @@
-# random_post(随呗)
+# random_post(随贴)
 
 ## 概述
 > 初学vue-cli,并使用vue-cli完成的一个简单的微型技术咨询论坛,便于用户发布/分享/解决问题的平台
