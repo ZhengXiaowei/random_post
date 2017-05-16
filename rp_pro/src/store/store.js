@@ -7,7 +7,7 @@ const commonMehods = new commonJs()
 Vue.use(Vuex)
 
 const state = {
-    isLogin: false,
+    isLogin: true,
     user_id: commonMehods.getStr('user_id', 0),
     token: commonMehods.getStr('token', 0),
     showFooterBtn: true,

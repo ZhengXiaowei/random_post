@@ -1,54 +1,62 @@
 <template>
     <div class="rp-post-detail t-left p-rel" :style="{height:autoHeight}">
-        <mu-card>
-            <mu-card-header class="post-user p-rel" :title="userInfo.nickname" subTitle="楼主" @click.native="getThisUser(userInfo.id)">
-                <mu-avatar :src="userInfo.avatar" slot="avatar" />
-                <span class="rp-post-time p-abs">{{ postsDetails.updated_at }}</span>
-            </mu-card-header>
-            <div class="post-body">
-                <div class="post-title">
-                    <h3>{{ postsDetails.title }}</h3>
-                </div>
-                <div class="post-content">
-                    <p>{{ postsDetails.content }}</p>
-                    <div class="post-img-box">
-                        <ul>
-                            <li class="post-img-item" v-for="(item,index) in postsDetails.imgs">
-                                <img :src="item" />
-                            </li>
-                        </ul>
+        <div class="rp-post-content" v-show="showPostDetails">
+            <mu-card>
+                <mu-card-header class="post-user p-rel" :title="userInfo.nickname" subTitle="楼主" @click.native="getThisUser(userInfo.id)">
+                    <mu-avatar :src="userInfo.avatar" slot="avatar" />
+                    <span class="rp-post-time p-abs">{{ postsDetails.updated_at }}</span>
+                </mu-card-header>
+                <div class="post-body">
+                    <div class="post-title">
+                        <h3>{{ postsDetails.title }}</h3>
+                    </div>
+                    <div class="post-content">
+                        <p>{{ postsDetails.content }}</p>
+                        <div class="post-img-box">
+                            <ul>
+                                <li class="post-img-item" v-for="(item,index) in postsDetails.imgs">
+                                    <img :src="item" />
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
+            </mu-card>
+            <div class="rp-comment">
+                <template v-if="postsComments.length>0" v-for="(item,index) in postsComments">
+                    <comment-list :commentItem="item" :commentFloor="index+1"></comment-list>
+                </template>
             </div>
-        </mu-card>
-        <div class="rp-comment">
-            <template v-if="postsComments.length>0" v-for="(item,index) in postsComments">
-                <comment-list :commentItem="item" :commentFloor="index+1"></comment-list>
-            </template>
-        </div>
-        <div class="rp-reply-btns">
-            <div class="btns-box">
-                <mu-flat-button label="回复楼主" class="reply-btn" @click="replayPosts(postsDetails.postId,postsDetails.postTitle)" />
+            <div class="rp-reply-btns">
+                <div class="btns-box">
+                    <mu-flat-button label="回复楼主" class="reply-btn" @click="replayPosts(postsDetails.postId,postsDetails.postTitle)" />
+                </div>
             </div>
         </div>
+        <transition @enter="showLoading" @leave="hideLoading">
+            <loading-box class="show-loading t-center" v-show="isLoading" loadingText="努力加载ing.."></loading-box>
+        </transition>
     </div>
 </template>
 <script>
 import CommentList from '../../use-components/comment-list'
+import LoadingBox from '../../use-components/loading'
 export default {
     components: {
-        CommentList
+        CommentList,
+        LoadingBox
     },
     data() {
         return {
             postsDetails: {},
             userInfo: {},
             autoHeight: '',
+            isLoading: false,
+            showPostDetails: false,
             postsComments: []
         }
     },
     created() {
-        this.getDataBeforeEnter()
         this.$store.watch((state) => {
             return state.bodyHeight
         }, () => {
@@ -57,8 +65,16 @@ export default {
         this.autoHeight = this.$store.getters.showBodyHeight + 56 + 'px'
     },
     watch: {
-        $route(to, from) {
-            console.log(to, from)
+        postsDetails() {
+            this.$nextTick(() => {
+                useVelocity('post-body').animationType('transition.slideUpIn')
+                useVelocity('btns-box').animationType('transition.bounceRightIn')
+            })
+        },
+        userInfo() {
+            this.$nextTick(() => {
+                useVelocity('post-user').animationType('transition.bounceLeftIn')
+            })
         }
     },
     methods: {
@@ -78,6 +94,8 @@ export default {
         },
         getDataBeforeEnter() {
             //根据id获取帖子详情
+            this.showPostDetails = false
+            this.isLoading = true
             this.$http.get('/api/communityDetail', {
                 params: {
                     id: this.$route.params.postId
@@ -88,17 +106,20 @@ export default {
                     this.postsDetails = getRes
                     this.postsComments = getRes.comsList
                     this.userInfo = getRes.user
-                    // console.log(this.postsDetails.user.nickname)
-                    // console.log(this.postsComments)
-                    // console.log(this.postsDetails)
+                    this.showPostDetails = true
+                    this.isLoading = false
                 }
             })
+        },
+        showLoading() {
+            useVelocity('show-loading').animationType('transition.expandIn')
+        },
+        hideLoading() {
+            useVelocity('show-loading').animationType('transition.expandOut', { duration: 650, delay: 650 })
         }
     },
     mounted() {
-        useVelocity('post-user').animationType('transition.bounceLeftIn')
-        useVelocity('post-body').animationType('transition.slideUpIn')
-        useVelocity('btns-box').animationType('transition.bounceRightIn')
+        this.getDataBeforeEnter()
     }
 }
 </script>
